@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sharadotsav - Stage Management & Scoring Portal</title>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF and AutoTable for PDF exports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <!-- Tailwind CSS for UI Layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --primary: #d97706;
+            --primary-dark: #92400e;
+            --accent-red: #dc2626;
+            --bg-light: #fffcf8;
+            --card-bg: #ffffff;
+            --border-color: #fde68a;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --input-bg: #f8fafc;
+            --shadow-lg: 0 12px 30px -5px rgba(217, 119, 6, 0.08);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+
+        .portal-header {
+            background: linear-gradient(135deg, #ffffff 0%, #fffbebe6 100%);
+            border: 2px solid #fcd34d;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .custom-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-input-focus:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.12);
+            background-color: #ffffff;
+        }
+
+        .btn-type-filter { 
+            padding: 8px 12px; 
+            font-size: 11px; 
+            font-weight: 700; 
+            border-radius: 10px; 
+            border: 1.5px solid #e2e8f0; 
+            background: white; 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+        }
+
+        .btn-type-filter.active { 
+            background: var(--primary-dark); 
+            color: white; 
+            border-color: var(--primary-dark); 
+            box-shadow: 0 4px 10px rgba(146, 64, 14, 0.2);
+        }
+
+        .schedule-card { 
+            background: #ffffff; 
+            border: 1.5px solid #e2e8f0; 
+            border-radius: 14px; 
+            padding: 14px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            border-left: 5px solid var(--primary); 
+            transition: all 0.2s ease;
+        }
+
+        .schedule-card:hover {
+            box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+        }
+
+        .schedule-card.completed { 
+            background: #f8fafc; 
+            border-left-color: #10b981; 
+        }
+
+        .modal-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(15, 23, 42, 0.55); 
+            backdrop-filter: blur(4px);
+            justify-content: center; 
+            align-items: center; 
+            z-index: 999; 
+            padding: 16px; 
+        }
+
+        .type-tag { 
+            display: inline-block; 
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 10px; 
+            font-weight: 800; 
+            color: white; 
+            letter-spacing: 0.3px;
+        }
+        .bg-dance { background: #b45309; }
+        .bg-singing { background: #059669; }
+        .bg-group { background: #6366f1; }
+        .bg-solo { background: #0284c7; }
+        .bg-age { background: #78350f; }
+
+        .lb-cat-card { 
+            background: #fffbeb; 
+            border: 1.5px solid #fde68a; 
+            border-radius: 12px; 
+            padding: 12px; 
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="py-6 px-3 sm:px-6">
+
+<div class="max-w-5xl mx-auto space-y-6">
+
+    <!-- Header Section -->
+    <header class="portal-header text-center py-10 px-6 rounded-3xl relative overflow-hidden bg-gradient-to-br from-amber-50 via-amber-100/60 to-orange-100/70 border-4 border-amber-400 shadow-2xl">
+        <div class="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-amber-300/50 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute bottom-0 left-0 -mb-8 -ml-8 w-40 h-40 bg-orange-300/40 rounded-full blur-2xl pointer-events-none"></div>
+        
+        <div class="relative z-10 space-y-3">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-200/80 border-2 border-amber-400 text-amber-950 text-xs sm:text-sm font-extrabold uppercase tracking-widest shadow-sm">
+                <i class="fa-solid fa-microphone-lines text-amber-700 text-base animate-pulse"></i>
+                Dance & Singing Stage Portal & Scoring System
+            </div>
+            <h1 class="text-5xl sm:text-7xl font-black text-amber-950 tracking-wider uppercase drop-shadow-md font-serif">Sharadotsav</h1>
+            <div class="text-base sm:text-xl font-extrabold text-amber-800 uppercase tracking-widest bg-amber-200/60 py-1.5 px-6 rounded-xl inline-block border border-amber-300/60 shadow-xs">
+                Khel, Sanskriti aur Utsav ka Mahasangam
+            </div>
+            <div class="text-xs sm:text-sm text-slate-700 font-bold tracking-wide pt-1">
+                Organized by: Shree Durga Mandir Vikas Samiti, Mirzapur
+            </div>
+            <div class="text-xs font-bold text-amber-900 tracking-wider pt-1 flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-code text-amber-600"></i> Design & Developed by MUKESH KUMAR
+            </div>
+        </div>
+    </header>
+
+    <!-- Export & Global Control Buttons -->
+    <div class="custom-card p-5 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/20 border-2 border-amber-300/80 shadow-md">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-amber-200/60 flex-wrap gap-2">
+            <div class="text-xs font-extrabold text-amber-950 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-folder-open text-amber-600"></i>
+                Reports, Certificates & System Actions
+            </div>
+            <span class="text-[10px] font-bold bg-amber-200/70 text-amber-900 px-3 py-1 rounded-full border border-amber-300 shadow-2xs">
+                Quick Action Panel
+            </span>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <button onclick="exportToExcel()" class="group flex items-center justify-center gap-2.5 p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm hover:shadow-md transform active:scale-95 border border-emerald-500">
+                <div class="w-8 h-8 rounded-lg bg-emerald-700 flex items-center justify-center text-white shrink-0 group-hover:bg-emerald-800 transition">
+                    <i class="fa-solid fa-file-excel text-sm"></i>
+                </div>
+                <span class="text-left leading-tight truncate">Export Excel Sheet</span>
+            </button>
+
+            <button onclick="exportJudgePDF()" class="group flex items-center justify-center gap-2.5 p-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-sm hover:shadow-md transform active:scale-95 border border-rose-500">
+                <div class="w-8 h-8 rounded-lg bg-rose-700 flex items-center justify-center text-white shrink-0 group-hover:bg-rose-800 transition">
+                    <i class="fa-solid fa-file-pdf text-sm"></i>
+                </div>
+                <span class="text-left leading-tight truncate">Judge Score Sheet PDF <span class="block text-[9px] font-normal text-rose-100">(Category & Age Wise)</span></span>
+            </button>
+
+            <button onclick="generateAllCertificates()" class="group flex items-center justify-center gap-2.5 p-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-sm hover:shadow-md transform active:scale-95 border border-amber-500">
+                <div class="w-8 h-8 rounded-lg bg-amber-700 flex items-center justify-center text-white shrink-0 group-hover:bg-amber-800 transition">
+                    <i class="fa-solid fa-award text-sm"></i>
+                </div>
+                <span class="text-left leading-tight truncate">Download Certificates <span class="block text-[9px] font-normal text-amber-100">(PDF Format)</span></span>
+            </button>
+
+            <button onclick="resetDatabase()" class="group flex items-center justify-center gap-2.5 p-3 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-300 hover:border-rose-300 rounded-xl text-xs font-bold transition shadow-2xs transform active:scale-95">
+                <div class="w-8 h-8 rounded-lg bg-slate-200 group-hover:bg-rose-100 flex items-center justify-center text-slate-600 group-hover:text-rose-600 shrink-0 transition">
+                    <i class="fa-solid fa-rotate-right text-sm"></i>
+                </div>
+                <span class="text-left leading-tight truncate">Reset All Data <span class="block text-[9px] font-normal text-slate-500 group-hover:text-rose-500">(Clear Database)</span></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Stage Anchor Live Display Box -->
+    <div class="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-amber-500/10 border-2 border-amber-400 rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div class="flex items-center gap-2 text-amber-900 font-extrabold text-xs uppercase tracking-wider">
+                <i class="fa-solid fa-bullhorn text-amber-600 text-sm"></i>
+                Stage Anchor Live Call View (Round-Robin Age & Distance Priority)
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button id="skipAnchorBtn" onclick="skipCurrentAnchorParticipant()" class="hidden px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-bold transition shadow-xs flex items-center gap-1">
+                    <i class="fa-solid fa-forward"></i> Skip / Absent (Move to Bottom)
+                </button>
+                <span class="text-[10px] font-bold bg-white text-amber-700 border border-amber-300 px-2.5 py-1 rounded-full shadow-xs">
+                    Live Performance Sequence
+                </span>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-white border-l-4 border-l-emerald-500 border border-slate-200 rounded-xl p-3.5 shadow-xs">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-1 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Currently On Stage
+                </div>
+                <div class="text-base font-extrabold text-slate-900 truncate" id="anchorCurrentName">No participant on stage</div>
+                <div class="text-xs text-slate-600 font-medium mt-1 truncate" id="anchorCurrentMeta">-</div>
+            </div>
+            <div class="bg-white border-l-4 border-l-amber-500 border border-slate-200 rounded-xl p-3.5 shadow-xs">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-amber-600 mb-1 flex items-center gap-1.5">
+                    <i class="fa-regular fa-clock"></i>
+                    Next Up (Get Ready)
+                </div>
+                <div class="text-base font-extrabold text-slate-900 truncate" id="anchorNextName">No participant queued</div>
+                <div class="text-xs text-slate-600 font-medium mt-1 truncate" id="anchorNextMeta">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Statistics Counter Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        <div class="bg-white border border-amber-200 rounded-xl p-3 text-center shadow-xs">
+            <div class="text-[10px] font-bold text-slate-500 uppercase">Total Entries</div>
+            <div class="text-xl font-extrabold text-amber-900 mt-0.5" id="countTotal">0</div>
+        </div>
+        <div class="bg-white border border-amber-200 rounded-xl p-3 text-center shadow-xs">
+            <div class="text-[10px] font-bold text-slate-500 uppercase">4 - 9 Yrs</div>
+            <div class="text-xl font-extrabold text-amber-900 mt-0.5" id="count4_9">0</div>
+        </div>
+        <div class="bg-white border border-amber-200 rounded-xl p-3 text-center shadow-xs">
+            <div class="text-[10px] font-bold text-slate-500 uppercase">10 - 15 Yrs</div>
+            <div class="text-xl font-extrabold text-amber-900 mt-0.5" id="count10_15">0</div>
+        </div>
+        <div class="bg-white border border-amber-200 rounded-xl p-3 text-center shadow-xs">
+            <div class="text-[10px] font-bold text-slate-500 uppercase">16 - 20 Yrs</div>
+            <div class="text-xl font-extrabold text-amber-900 mt-0.5" id="count16_20">0</div>
+        </div>
+        <div class="bg-white border border-amber-200 rounded-xl p-3 text-center shadow-xs col-span-2 sm:col-span-1">
+            <div class="text-[10px] font-bold text-slate-500 uppercase">21+ Yrs</div>
+            <div class="text-xl font-extrabold text-amber-900 mt-0.5" id="count21_above">0</div>
+        </div>
+    </div>
+
+    <!-- Category & Event Wise Leaderboard Box -->
+    <div class="custom-card p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-amber-100 flex-wrap gap-2">
+            <div class="flex items-center gap-2 text-amber-950 font-extrabold text-xs uppercase tracking-wider">
+                <i class="fa-solid fa-trophy text-amber-500 text-sm"></i>
+                Category & Event Wise Leaderboard (Top 3 Averages)
+            </div>
+            <div class="flex gap-1">
+                <button onclick="setLeaderboardEvent('Dance')" id="lbBtnDance" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-amber-700 text-white">Dance</button>
+                <button onclick="setLeaderboardEvent('Singing')" id="lbBtnSinging" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-200 text-slate-700">Singing</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="categoryLeaderboardDisplay"></div>
+    </div>
+
+    <!-- Registration Form -->
+    <form id="danceForm" onsubmit="handleDanceSubmit(event)" class="custom-card p-5 sm:p-6 space-y-6">
+        <div class="border-b border-slate-100 pb-3">
+            <h2 class="text-lg font-extrabold text-amber-950 flex items-center gap-2">
+                <i class="fa-solid fa-user-plus text-amber-600"></i>
+                New Participant Registration (Dance & Singing)
+            </h2>
+            <p class="text-xs text-slate-500 font-medium mt-0.5">Fill details below for Solo or Group dance / song performance</p>
+        </div>
+
+        <div class="space-y-4">
+            <div class="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                1. Basic Details & Event Selection
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Event Category</label>
+                    <select name="event_category" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900 form-input-focus transition">
+                        <option value="Dance">Dance Competition</option>
+                        <option value="Singing">Singing (Song) Competition</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Participant / Group Name</label>
+                    <input type="text" name="team_name" placeholder="Full Name or Group Name" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900 form-input-focus transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Father's / Guardian Name</label>
+                    <input type="text" name="father_name" placeholder="Father's full name" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900 form-input-focus transition">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Performance Type</label>
+                    <select id="participation_type" name="participation_type" onchange="toggleTeamFields()"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900 form-input-focus transition">
+                        <option value="Solo">Solo Performance</option>
+                        <option value="Group">Group Performance</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Mobile Number 1 (WhatsApp)</label>
+                    <input type="tel" name="mobile_number" maxlength="10" placeholder="10-digit mobile number" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900 form-input-focus transition">
+                </div>
+                <div id="mobile2Container" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Mobile Number 2 (Group)</label>
+                    <input type="tel" name="mobile_number_2" maxlength="10" placeholder="2nd mobile number" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900 form-input-focus transition">
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-4 pt-2 border-t border-slate-100">
+            <div class="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                2. Age Group, Distance & Song Details
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Age Group Category</label>
+                    <select name="age_category"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900 form-input-focus transition">
+                        <option value="4-9">4 - 9 Years (Junior)</option>
+                        <option value="10-15">10 - 15 Years (Intermediate)</option>
+                        <option value="16-20">16 - 20 Years (Senior)</option>
+                        <option value="21+">21+ Above Years (Adult)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Distance from Mirzapur (km)</label>
+                    <input type="number" name="distance" step="0.1" min="0" value="0" placeholder="e.g. 5.5 km" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900 form-input-focus transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Genre / Style / Raag</label>
+                    <input type="text" name="dance_style" placeholder="e.g. Classical, Bollywood, Folk, Sufi" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900 form-input-focus transition">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Song Name / Track Title</label>
+                <input type="text" name="song_name" placeholder="Song name jo participant gayega ya play hoga" 
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900 form-input-focus transition">
+            </div>
+        </div>
+
+        <div id="teamFieldSet" class="hidden p-4 rounded-xl bg-amber-50/60 border border-amber-200 space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-users text-amber-600"></i>
+                    3. Group Team Members
+                </div>
+                <button type="button" onclick="addMoreMemberField()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-plus"></i> Add Member
+                </button>
+            </div>
+            
+            <div id="teamMembersContainer" class="space-y-2">
+                <div class="grid grid-cols-3 gap-2">
+                    <input type="text" name="member_name[]" placeholder="Member Name" class="col-span-2 px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold">
+                    <input type="number" name="member_age[]" placeholder="Age" min="1" max="100" class="col-span-1 px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold">
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white rounded-xl text-sm font-extrabold uppercase tracking-wide shadow-md transition transform active:scale-[0.99] flex items-center justify-center gap-2">
+            <i class="fa-solid fa-check-circle"></i>
+            Register & Add To Stage Schedule
+        </button>
+    </form>
+
+    <!-- Stage Sequence & Management -->
+    <div class="custom-card p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 flex-wrap gap-2">
+            <div class="text-xs font-extrabold text-amber-950 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-list-ol text-amber-600"></i>
+                Live Stage Sequence & Scoring
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-5 gap-2.5 mb-4">
+            <div class="sm:col-span-2">
+                <input type="text" id="searchBox" placeholder="Search name, mobile or song..." oninput="renderSchedule()" 
+                       class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-semibold form-input-focus">
+            </div>
+            <div>
+                <select id="eventFilter" onchange="renderSchedule()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold form-input-focus">
+                    <option value="All">All Events (Dance + Singing)</option>
+                    <option value="Dance">Dance Only</option>
+                    <option value="Singing">Singing Only</option>
+                </select>
+            </div>
+            <div>
+                <select id="statusFilter" onchange="renderSchedule()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold form-input-focus">
+                    <option value="All">All Statuses</option>
+                    <option value="Pending">Pending Only</option>
+                    <option value="Done">Completed Only</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-1">
+                <button class="btn-type-filter flex-1 active" id="btnTypeAll" onclick="setTypeFilter('All')">All</button>
+                <button class="btn-type-filter flex-1" id="btnTypeSolo" onclick="setTypeFilter('Solo')">Solo</button>
+                <button class="btn-type-filter flex-1" id="btnTypeGroup" onclick="setTypeFilter('Group')">Group</button>
+            </div>
+        </div>
+
+        <div id="scheduleListDisplay" class="space-y-3"></div>
+    </div>
+
+</div>
+
+<!-- Score Input Modal -->
+<div id="scoreModal" class="modal-overlay">
+    <div class="bg-white rounded-2xl p-5 max-w-md w-full shadow-2xl border border-amber-200 animate-fade-in space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 id="scoreModalTitle" class="text-sm font-extrabold text-amber-950 uppercase">Enter Judge Scores</h3>
+            <button onclick="closeScoreModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <input type="hidden" id="currentScoreItemId">
+        
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Judge 1 (Max 100)</label>
+                <input type="number" id="j1_score" min="0" max="100" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold">
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Judge 2 (Max 100)</label>
+                <input type="number" id="j2_score" min="0" max="100" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold">
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Judge 3 (Max 100)</label>
+                <input type="number" id="j3_score" min="0" max="100" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold">
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Judge 4 (Max 100)</label>
+                <input type="number" id="j4_score" min="0" max="100" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold">
+            </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+            <button onclick="saveJudgeScores()" class="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition">Save & Calculate</button>
+            <button onclick="closeScoreModal()" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Participant Modal -->
+<div id="editModal" class="modal-overlay">
+    <div class="bg-white rounded-2xl p-5 max-w-lg w-full shadow-2xl border border-amber-200 animate-fade-in space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 class="text-sm font-extrabold text-amber-950 uppercase">Edit Participant Details</h3>
+            <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <input type="hidden" id="edit_item_id">
+        
+        <div class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Event Category</label>
+                    <select id="edit_event_category" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                        <option value="Dance">Dance</option>
+                        <option value="Singing">Singing</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Participant / Group Name</label>
+                    <input type="text" id="edit_team_name" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Father's / Guardian Name</label>
+                    <input type="text" id="edit_father_name" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Mobile Number 1</label>
+                    <input type="text" id="edit_mobile_number" maxlength="10" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                </div>
+            </div>
+            <div id="editMobile2Container" class="hidden">
+                <label class="block text-xs font-bold text-slate-700 mb-1">Mobile Number 2 (Group)</label>
+                <input type="text" id="edit_mobile_number_2" maxlength="10" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Performance Type</label>
+                    <select id="edit_participation_type" onchange="toggleEditTeamFields()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50 text-slate-900 form-input-focus">
+                        <option value="Solo">Solo</option>
+                        <option value="Group">Group</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Age Category</label>
+                    <select id="edit_age_category" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                        <option value="4-9">4 - 9 Years</option>
+                        <option value="10-15">10 - 15 Years</option>
+                        <option value="16-20">16 - 20 Years</option>
+                        <option value="21+">21+ Above Years</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Distance (km)</label>
+                    <input type="number" id="edit_distance" step="0.1" min="0" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                </div>
+            </div>
+
+            <!-- Edit Group Members Section -->
+            <div id="editTeamFieldSet" class="hidden p-3 rounded-xl bg-amber-50/60 border border-amber-200 space-y-2">
+                <div class="flex items-center justify-between">
+                    <div class="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-users text-amber-600"></i> Edit Group Members
+                    </div>
+                    <button type="button" onclick="addEditMemberField()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> Add Member
+                    </button>
+                </div>
+                <div id="editTeamMembersContainer" class="space-y-1.5"></div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Genre / Style / Raag</label>
+                    <input type="text" id="edit_dance_style" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Song Name / Track Title</label>
+                    <input type="text" id="edit_song_name" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+            <button onclick="saveEditedParticipant()" class="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition">Update Details</button>
+            <button onclick="closeEditModal()" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Team Members Modal -->
+<div id="teamModal" class="modal-overlay">
+    <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-2xl border border-amber-200 animate-fade-in space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 id="modalTeamTitle" class="text-xs font-extrabold text-amber-950 uppercase truncate">Team Members</h3>
+            <button onclick="closeTeamModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="modalTeamList" class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-slate-700 font-medium"></div>
+        <button onclick="closeTeamModal()" class="w-full py-2 bg-slate-900 text-white font-bold rounded-xl text-xs transition">Close</button>
+    </div>
+</div>
+
+<script>
+    const MAIN_STORAGE_KEY = 'sharadotsav_dance_data_v2';
+    const OLD_STORAGE_KEYS = ['sharadotsav_dance_data_v26', 'sharadotsav_dance_data_v27', 'sharadotsav_dance_data_v25', 'sharadotsav_dance_data_v24', 'sharadotsav_dance_data_v3', 'sharadotsav_dance_data_v1'];
+    
+    let currentTypeFilter = 'All';
+    let currentLeaderboardEvent = 'Dance';
+
+    function getStoredData() {
+        let data = JSON.parse(localStorage.getItem(MAIN_STORAGE_KEY) || '[]');
+        if (data.length === 0) {
+            for (let oldKey of OLD_STORAGE_KEYS) {
+                let oldData = JSON.parse(localStorage.getItem(oldKey) || '[]');
+                if (oldData.length > 0) {
+                    data = oldData;
+                    localStorage.setItem(MAIN_STORAGE_KEY, JSON.stringify(data));
+                    break;
+                }
+            }
+        }
+
+        return data.map(item => ({
+            ...item,
+            event_category: item.event_category || 'Dance',
+            distance: item.distance !== undefined ? parseFloat(item.distance) : 0,
+            skipCount: item.skipCount || 0
+        }));
+    }
+
+    function saveData(records) {
+        localStorage.setItem(MAIN_STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function resetDatabase() {
+        if (confirm("Kya aap sabhi records ko clear karke database empty karna chahte hain?")) {
+            localStorage.removeItem(MAIN_STORAGE_KEY);
+            OLD_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+            renderSchedule();
+        }
+    }
+
+    function setTypeFilter(type) {
+        currentTypeFilter = type;
+        document.querySelectorAll('.btn-type-filter').forEach(btn => btn.classList.remove('active'));
+        if(type === 'All') document.getElementById('btnTypeAll').classList.add('active');
+        if(type === 'Solo') document.getElementById('btnTypeSolo').classList.add('active');
+        if(type === 'Group') document.getElementById('btnTypeGroup').classList.add('active');
+        renderSchedule();
+    }
+
+    function setLeaderboardEvent(evt) {
+        currentLeaderboardEvent = evt;
+        if(evt === 'Dance') {
+            document.getElementById('lbBtnDance').className = 'px-2.5 py-1 text-[10px] font-bold rounded-lg bg-amber-700 text-white';
+            document.getElementById('lbBtnSinging').className = 'px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-200 text-slate-700';
+        } else {
+            document.getElementById('lbBtnSinging').className = 'px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-700 text-white';
+            document.getElementById('lbBtnDance').className = 'px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-200 text-slate-700';
+        }
+        renderSchedule();
+    }
+
+    function toggleTeamFields() {
+        const pType = document.getElementById('participation_type').value;
+        const teamBox = document.getElementById('teamFieldSet');
+        const mobile2Box = document.getElementById('mobile2Container');
+        if (pType === 'Group') {
+            teamBox.classList.remove('hidden');
+            mobile2Box.classList.remove('hidden');
+        } else {
+            teamBox.classList.add('hidden');
+            mobile2Box.classList.add('hidden');
+        }
+    }
+
+    function addMoreMemberField() {
+        const container = document.getElementById('teamMembersContainer');
+        const div = document.createElement('div');
+        div.className = 'grid grid-cols-3 gap-2';
+        div.innerHTML = `
+            <input type="text" name="member_name[]" placeholder="Member Name" class="col-span-2 px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold">
+            <input type="number" name="member_age[]" placeholder="Age" min="1" max="100" class="col-span-1 px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold">
+        `;
+        container.appendChild(div);
+    }
+
+    // Round-Robin Age Rotation Schedule Generator with Distance Descending Priority (e.g. 10km -> 7km -> 5km)
+    function generateInterleavedSchedule(data) {
+        let cat1 = data.filter(d => d.age_category === '4-9').sort((a,b) => (a.skipCount - b.skipCount) || ((parseFloat(b.distance) || 0) - (parseFloat(a.distance) || 0)) || (new Date(a.timestamp) - new Date(b.timestamp)));
+        let cat2 = data.filter(d => d.age_category === '10-15').sort((a,b) => (a.skipCount - b.skipCount) || ((parseFloat(b.distance) || 0) - (parseFloat(a.distance) || 0)) || (new Date(a.timestamp) - new Date(b.timestamp)));
+        let cat3 = data.filter(d => d.age_category === '16-20').sort((a,b) => (a.skipCount - b.skipCount) || ((parseFloat(b.distance) || 0) - (parseFloat(a.distance) || 0)) || (new Date(a.timestamp) - new Date(b.timestamp)));
+        let cat4 = data.filter(d => d.age_category === '21+').sort((a,b) => (a.skipCount - b.skipCount) || ((parseFloat(b.distance) || 0) - (parseFloat(a.distance) || 0)) || (new Date(a.timestamp) - new Date(b.timestamp)));
+
+        let queues = [cat1, cat2, cat3, cat4];
+        let finalScheduled = [];
+        let activeQueueIdx = 0;
+
+        while(queues.some(q => q.length > 0)) {
+            let addedInThisRound = false;
+            
+            for(let attempt = 0; attempt < queues.length; attempt++) {
+                let currentQueue = queues[activeQueueIdx];
+                
+                if(currentQueue.length > 0) {
+                    let candidate = currentQueue[0];
+                    let recentNames = finalScheduled.slice(-3).map(item => item.team_name.trim().toLowerCase());
+                    
+                    if(recentNames.includes(candidate.team_name.trim().toLowerCase()) && currentQueue.length > 1) {
+                        let temp = currentQueue[0];
+                        currentQueue[0] = currentQueue[1];
+                        currentQueue[1] = temp;
+                        candidate = currentQueue[0];
+                    }
+
+                    finalScheduled.push(currentQueue.shift());
+                    activeQueueIdx = (activeQueueIdx + 1) % queues.length;
+                    addedInThisRound = true;
+                    break;
+                } else {
+                    activeQueueIdx = (activeQueueIdx + 1) % queues.length;
+                }
+            }
+            if(!addedInThisRound) break;
+        }
+
+        return finalScheduled;
+    }
+
+    function skipCurrentAnchorParticipant() {
+        const data = getStoredData();
+        let scheduledList = generateInterleavedSchedule(data);
+        let pendingList = scheduledList.filter(d => d.status === 'Pending');
+
+        if(pendingList.length === 0) {
+            alert('Koi bhi pending participant available nahi hai skip karne ke liye!');
+            return;
+        }
+
+        let currentActive = pendingList[0];
+
+        if(confirm(`Kya aap "${currentActive.team_name}" (${currentActive.age_category} Yrs) ko absent/skip karke is category ke last me bhejna chahte hain?`)) {
+            let records = getStoredData();
+            records = records.map(r => {
+                if(r.id === currentActive.id) {
+                    r.skipCount = (r.skipCount || 0) + 1;
+                }
+                return r;
+            });
+            saveData(records);
+            renderSchedule();
+        }
+    }
+
+    function renderLeaderboard(data) {
+        const lbContainer = document.getElementById('categoryLeaderboardDisplay');
+        lbContainer.innerHTML = '';
+
+        const categories = [
+            { key: '4-9', title: '4 - 9 Years (Junior)' },
+            { key: '10-15', title: '10 - 15 Years (Intermediate)' },
+            { key: '16-20', title: '16 - 20 Years (Senior)' },
+            { key: '21+', title: '21+ Above Years (Adult)' }
+        ];
+
+        categories.forEach(cat => {
+            let catRecords = data.filter(d => d.event_category === currentLeaderboardEvent && d.age_category === cat.key && d.avgScore && !isNaN(d.avgScore));
+            catRecords.sort((a, b) => parseFloat(b.avgScore) - parseFloat(a.avgScore));
+            let top3 = catRecords.slice(0, 3);
+
+            const catCard = document.createElement('div');
+            catCard.className = 'lb-cat-card';
+            
+            let htmlContent = `<div class="text-xs font-extrabold text-amber-950 mb-2 pb-1 border-b border-amber-200/60">${cat.title} (${currentLeaderboardEvent})</div>`;
+            
+            if (top3.length === 0) {
+                htmlContent += `<div class="text-[11px] text-slate-400 font-medium italic">No evaluated scores yet</div>`;
+            } else {
+                const medals = ['1st', '2nd', '3rd'];
+                top3.forEach((item, idx) => {
+                    htmlContent += `
+                        <div class="flex items-center justify-between text-xs py-1 font-semibold border-b border-amber-100/40 last:border-0">
+                            <span class="truncate pr-2">${medals[idx]} <strong class="text-slate-800">${item.team_name}</strong> <span class="text-[10px] text-slate-500 font-normal">("${item.song_name || 'N/A'}")</span></span>
+                            <span class="text-amber-700 font-extrabold">${item.avgScore}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            catCard.innerHTML = htmlContent;
+            lbContainer.appendChild(catCard);
+        });
+    }
+
+    function renderSchedule() {
+        const data = getStoredData();
+        const displayContainer = document.getElementById('scheduleListDisplay');
+        displayContainer.innerHTML = '';
+
+        document.getElementById('countTotal').innerText = data.length;
+        document.getElementById('count4_9').innerText = data.filter(d => d.age_category === '4-9').length;
+        document.getElementById('count10_15').innerText = data.filter(d => d.age_category === '10-15').length;
+        document.getElementById('count16_20').innerText = data.filter(d => d.age_category === '16-20').length;
+        document.getElementById('count21_above').innerText = data.filter(d => d.age_category === '21+').length;
+
+        renderLeaderboard(data);
+
+        let scheduledList = generateInterleavedSchedule(data);
+
+        let pendingList = scheduledList.filter(d => d.status === 'Pending');
+        const skipBtn = document.getElementById('skipAnchorBtn');
+
+        if(pendingList.length > 0) {
+            skipBtn.classList.remove('hidden');
+            document.getElementById('anchorCurrentName').innerText = `#${scheduledList.indexOf(pendingList[0])+1} ${pendingList[0].team_name}`;
+            document.getElementById('anchorCurrentMeta').innerText = `[${pendingList[0].event_category}] Age: ${pendingList[0].age_category} Yrs | Dist: ${pendingList[0].distance}km | ${pendingList[0].participation_type} | Song: ${pendingList[0].song_name || 'N/A'}`;
+        } else {
+            skipBtn.classList.add('hidden');
+            document.getElementById('anchorCurrentName').innerText = data.length === 0 ? "No Participants Registered" : "All Performances Completed";
+            document.getElementById('anchorCurrentMeta').innerText = "-";
+        }
+
+        if(pendingList.length > 1) {
+            document.getElementById('anchorNextName').innerText = `#${scheduledList.indexOf(pendingList[1])+1} ${pendingList[1].team_name}`;
+            document.getElementById('anchorNextMeta').innerText = `[${pendingList[1].event_category}] Age: ${pendingList[1].age_category} Yrs | Dist: ${pendingList[1].distance}km | ${pendingList[1].participation_type} | Song: ${pendingList[1].song_name || 'N/A'}`;
+        } else {
+            document.getElementById('anchorNextName').innerText = "None";
+            document.getElementById('anchorNextMeta').innerText = "-";
+        }
+
+        const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+        const eventFilter = document.getElementById('eventFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+
+        scheduledList = scheduledList.filter(item => {
+            let songText = item.song_name ? item.song_name.toLowerCase() : '';
+            let matchesSearch = item.team_name.toLowerCase().includes(searchTerm) || item.mobile_number.includes(searchTerm) || (item.mobile_number_2 && item.mobile_number_2.includes(searchTerm)) || songText.includes(searchTerm);
+            let matchesEvent = eventFilter === 'All' || item.event_category === eventFilter;
+            let matchesStatus = statusFilter === 'All' || item.status === statusFilter;
+            let matchesType = currentTypeFilter === 'All' || item.participation_type === currentTypeFilter;
+            return matchesSearch && matchesEvent && matchesStatus && matchesType;
+        });
+
+        if (scheduledList.length === 0) {
+            displayContainer.innerHTML = `
+                <div class="text-center py-8 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+                    <i class="fa-solid fa-clipboard-list text-2xl text-slate-300 mb-2"></i>
+                    <p class="text-xs text-slate-500 font-semibold">No participants found matching the criteria.</p>
+                </div>
+            `;
+            return;
+        }
+
+        scheduledList.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = `schedule-card ${item.status === 'Done' ? 'completed' : ''}`;
+            
+            let nameClickAction = item.participation_type === 'Group' 
+                ? `onclick='showTeamMembers(${JSON.stringify(item.team_name)}, ${JSON.stringify(item.members || [])})'` 
+                : '';
+
+            card.innerHTML = `
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="space-y-1">
+                        <h4 ${nameClickAction} class="text-sm font-extrabold text-slate-900 cursor-pointer flex items-center gap-1.5 flex-wrap">
+                            #${index + 1} ${item.team_name}
+                            <span class="type-tag ${item.event_category === 'Singing' ? 'bg-singing' : 'bg-dance'}">${item.event_category}</span>
+                            <span class="type-tag bg-age">Age: ${item.age_category} Yrs</span>
+                            <span class="type-tag bg-amber-800">Dist: ${item.distance}km</span>
+                            <span class="type-tag ${item.participation_type === 'Group' ? 'bg-group' : 'bg-solo'}">${item.participation_type}</span>
+                        </h4>
+                        <p class="text-xs text-slate-500 font-medium">
+                            Age Group: <strong class="text-amber-800">${item.age_category} Years</strong> | 
+                            Distance: <strong class="text-amber-700">${item.distance} km</strong> | 
+                            Style/Genre: <strong class="text-slate-700">${item.dance_style || 'N/A'}</strong> | 
+                            Song: <strong class="text-slate-700">${item.song_name || 'N/A'}</strong> | 
+                            Mob: ${item.mobile_number} ${item.mobile_number_2 ? '/ ' + item.mobile_number_2 : ''}
+                        </p>
+                    </div>
+                    <!-- Action Buttons -->
+                    <div class="flex items-center gap-1.5 flex-wrap shrink-0">
+                        <button onclick="openEditModal('${item.id}')" 
+                                class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition inline-flex items-center gap-1">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button onclick="toggleStatus('${item.id}')" 
+                                class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition border ${item.status === 'Done' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-amber-50 text-amber-700 border-amber-300'}">
+                            ${item.status === 'Done' ? 'Completed' : 'Pending'}
+                        </button>
+                        <button onclick="deleteParticipant('${item.id}')" 
+                                class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100 transition inline-flex items-center gap-1" title="Delete Participant">
+                            <i class="fa-solid fa-trash"></i> Delete
+                        </button>
+                        <button onclick="printChestBadge('${item.id}')" 
+                                class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition">
+                            Badge
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100/80 bg-amber-50/50 -mx-3.5 -mb-3.5 p-3 rounded-b-xl">
+                    <div class="text-xs font-semibold text-amber-900">
+                        J1: ${item.j1 !== '' && item.j1 !== undefined ? item.j1 : '-'} | J2: ${item.j2 !== '' && item.j2 !== undefined ? item.j2 : '-'} | J3: ${item.j3 !== '' && item.j3 !== undefined ? item.j3 : '-'} | J4: ${item.j4 !== '' && item.j4 !== undefined ? item.j4 : '-'}
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-extrabold text-amber-950">Avg: ${item.avgScore || '-'} / 100</span>
+                        <button onclick="openScoreModal('${item.id}')" 
+                                class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition shadow-xs">
+                            Scores
+                        </button>
+                    </div>
+                </div>
+            `;
+            displayContainer.appendChild(card);
+        });
+    }
+
+    function toggleStatus(id) {
+        let records = getStoredData();
+        records = records.map(r => {
+            if (r.id === id) r.status = r.status === 'Done' ? 'Pending' : 'Done';
+            return r;
+        });
+        saveData(records);
+        renderSchedule();
+    }
+
+    function deleteParticipant(id) {
+        if (confirm("Kya aap is participant ko delete karna chahte hain?")) {
+            let records = getStoredData();
+            records = records.filter(r => r.id !== id);
+            saveData(records);
+            renderSchedule();
+        }
+    }
+
+    function openScoreModal(id) {
+        let records = getStoredData();
+        let item = records.find(r => r.id === id);
+        if(!item) return;
+
+        document.getElementById('currentScoreItemId').value = id;
+        document.getElementById('scoreModalTitle').innerText = `Scores: ${item.team_name}`;
+        document.getElementById('j1_score').value = item.j1 !== '' && item.j1 !== undefined ? item.j1 : '';
+        document.getElementById('j2_score').value = item.j2 !== '' && item.j2 !== undefined ? item.j2 : '';
+        document.getElementById('j3_score').value = item.j3 !== '' && item.j3 !== undefined ? item.j3 : '';
+        document.getElementById('j4_score').value = item.j4 !== '' && item.j4 !== undefined ? item.j4 : '';
+
+        document.getElementById('scoreModal').style.display = 'flex';
+    }
+
+    function saveJudgeScores() {
+        let id = document.getElementById('currentScoreItemId').value;
+        let j1Input = document.getElementById('j1_score').value;
+        let j2Input = document.getElementById('j2_score').value;
+        let j3Input = document.getElementById('j3_score').value;
+        let j4Input = document.getElementById('j4_score').value;
+
+        let j1 = j1Input !== '' ? parseFloat(j1Input) : '';
+        let j2 = j2Input !== '' ? parseFloat(j2Input) : '';
+        let j3 = j3Input !== '' ? parseFloat(j3Input) : '';
+        let j4 = j4Input !== '' ? parseFloat(j4Input) : '';
+
+        let scores = [j1, j2, j3, j4].filter(val => val !== '' && !isNaN(val));
+        let sum = scores.reduce((acc, val) => acc + val, 0);
+        let avg = scores.length > 0 ? (sum / scores.length).toFixed(1) : '';
+
+        let records = getStoredData();
+        records = records.map(r => {
+            if (r.id === id) {
+                r.j1 = j1; r.j2 = j2; r.j3 = j3; r.j4 = j4;
+                r.avgScore = avg;
+                r.status = 'Done';
+            }
+            return r;
+        });
+        saveData(records);
+        closeScoreModal();
+        renderSchedule();
+    }
+
+    function closeScoreModal() { document.getElementById('scoreModal').style.display = 'none'; }
+
+    function addEditMemberField(name = '', age = '') {
+        const container = document.getElementById('editTeamMembersContainer');
+        const div = document.createElement('div');
+        div.className = 'grid grid-cols-3 gap-2';
+        div.innerHTML = `
+            <input type="text" name="edit_member_name[]" value="${name}" placeholder="Member Name" class="col-span-2 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold">
+            <input type="number" name="edit_member_age[]" value="${age}" placeholder="Age" min="1" max="100" class="col-span-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold">
+        `;
+        container.appendChild(div);
+    }
+
+    function toggleEditTeamFields() {
+        const pType = document.getElementById('edit_participation_type').value;
+        const editTeamBox = document.getElementById('editTeamFieldSet');
+        const editTeamContainer = document.getElementById('editTeamMembersContainer');
+        const editMobile2Box = document.getElementById('editMobile2Container');
+        if (pType === 'Group') {
+            editTeamBox.classList.remove('hidden');
+            editMobile2Box.classList.remove('hidden');
+            if (editTeamContainer.children.length === 0) {
+                addEditMemberField();
+            }
+        } else {
+            editTeamBox.classList.add('hidden');
+            editMobile2Box.classList.add('hidden');
+        }
+    }
+
+    function openEditModal(id) {
+        let records = getStoredData();
+        let item = records.find(r => r.id === id);
+        if(!item) return;
+
+        document.getElementById('edit_item_id').value = item.id;
+        document.getElementById('edit_event_category').value = item.event_category || 'Dance';
+        document.getElementById('edit_team_name').value = item.team_name || '';
+        document.getElementById('edit_father_name').value = item.father_name || '';
+        document.getElementById('edit_mobile_number').value = item.mobile_number || '';
+        document.getElementById('edit_mobile_number_2').value = item.mobile_number_2 || '';
+        document.getElementById('edit_participation_type').value = item.participation_type || 'Solo';
+        document.getElementById('edit_age_category').value = item.age_category || '4-9';
+        document.getElementById('edit_distance').value = item.distance !== undefined ? item.distance : 0;
+        document.getElementById('edit_dance_style').value = item.dance_style || '';
+        document.getElementById('edit_song_name').value = item.song_name || '';
+
+        const editTeamBox = document.getElementById('editTeamFieldSet');
+        const editTeamContainer = document.getElementById('editTeamMembersContainer');
+        const editMobile2Box = document.getElementById('editMobile2Container');
+        editTeamContainer.innerHTML = '';
+
+        if (item.participation_type === 'Group') {
+            editTeamBox.classList.remove('hidden');
+            editMobile2Box.classList.remove('hidden');
+            if (item.members && item.members.length > 0) {
+                item.members.forEach(m => {
+                    addEditMemberField(m.name || '', m.age || '');
+                });
+            } else {
+                addEditMemberField();
+            }
+        } else {
+            editTeamBox.classList.add('hidden');
+            editMobile2Box.classList.add('hidden');
+        }
+
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    function saveEditedParticipant() {
+        let id = document.getElementById('edit_item_id').value;
+        let records = getStoredData();
+
+        let members = [];
+        let pType = document.getElementById('edit_participation_type').value;
+        if (pType === 'Group') {
+            let names = document.querySelectorAll('input[name="edit_member_name[]"]');
+            let ages = document.querySelectorAll('input[name="edit_member_age[]"]');
+            for (let i = 0; i < names.length; i++) {
+                if (names[i].value.trim() !== '') {
+                    members.push({ name: names[i].value, age: ages[i].value || 'N/A' });
+                }
+            }
+        }
+
+        records = records.map(r => {
+            if (r.id === id) {
+                r.event_category = document.getElementById('edit_event_category').value;
+                r.team_name = document.getElementById('edit_team_name').value;
+                r.father_name = document.getElementById('edit_father_name').value;
+                r.mobile_number = document.getElementById('edit_mobile_number').value;
+                r.mobile_number_2 = pType === 'Group' ? (document.getElementById('edit_mobile_number_2').value || '') : '';
+                r.participation_type = pType;
+                r.age_category = document.getElementById('edit_age_category').value;
+                r.distance = parseFloat(document.getElementById('edit_distance').value) || 0;
+                r.dance_style = document.getElementById('edit_dance_style').value;
+                r.song_name = document.getElementById('edit_song_name').value;
+                if (pType === 'Group') {
+                    r.members = members;
+                }
+            }
+            return r;
+        });
+
+        saveData(records);
+        closeEditModal();
+        renderSchedule();
+    }
+
+    function showTeamMembers(teamName, members) {
+        document.getElementById('modalTeamTitle').innerText = `Team: ${teamName}`;
+        const listDiv = document.getElementById('modalTeamList');
+        listDiv.innerHTML = '';
+
+        if (!members || members.length === 0) {
+            listDiv.innerHTML = '<p class="text-slate-400 italic">No members specified.</p>';
+        } else {
+            members.forEach((m, idx) => {
+                if (m.name) {
+                    const p = document.createElement('div');
+                    p.className = 'py-1 border-b border-slate-100 flex justify-between';
+                    p.innerHTML = `<span>${idx + 1}. ${m.name}</span> <span class="text-slate-400">Age: ${m.age || 'N/A'}</span>`;
+                    listDiv.appendChild(p);
+                }
+            });
+        }
+        document.getElementById('teamModal').style.display = 'flex';
+    }
+
+    function closeTeamModal() { document.getElementById('teamModal').style.display = 'none'; }
+
+    function handleDanceSubmit(e) {
+        e.preventDefault();
+        const form = document.getElementById('danceForm');
+        const fd = new FormData(form);
+
+        let members = [];
+        let names = fd.getAll('member_name[]');
+        let ages = fd.getAll('member_age[]');
+        for (let i = 0; i < names.length; i++) {
+            if (names[i].trim() !== '') {
+                members.push({ name: names[i], age: ages[i] || 'N/A' });
+            }
+        }
+
+        const newEntry = {
+            id: 'SN' + Date.now().toString().slice(-5),
+            event_category: fd.get('event_category'),
+            team_name: fd.get('team_name'),
+            father_name: fd.get('father_name') || 'N/A',
+            mobile_number: fd.get('mobile_number'),
+            mobile_number_2: fd.get('mobile_number_2') || '',
+            participation_type: fd.get('participation_type'),
+            age_category: fd.get('age_category'),
+            distance: parseFloat(fd.get('distance')) || 0,
+            dance_style: fd.get('dance_style'),
+            song_name: fd.get('song_name'),
+            members: members,
+            status: 'Pending',
+            j1: '', j2: '', j3: '', j4: '', avgScore: '',
+            skipCount: 0,
+            timestamp: new Date().toISOString()
+        };
+
+        const records = getStoredData();
+        records.push(newEntry);
+        saveData(records);
+
+        form.reset();
+        document.getElementById('teamFieldSet').classList.add('hidden');
+        document.getElementById('mobile2Container').classList.add('hidden');
+        renderSchedule();
+    }
+
+    function printChestBadge(id) {
+        const records = getStoredData();
+        const scheduledRecords = generateInterleavedSchedule(records);
+        const item = records.find(r => r.id === id);
+        const seqIndex = scheduledRecords.findIndex(r => r.id === id) + 1;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Chest Badge - ${item.team_name}</title>
+                <style>
+                    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                    .badge { border: 4px solid #b45309; padding: 24px; border-radius: 18px; text-align: center; width: 320px; background: #fffbeb; }
+                    .header { font-size: 20px; font-weight: 800; color: #78350f; text-transform: uppercase; }
+                    .sub { font-size: 11px; font-weight: bold; color: #b45309; margin-bottom: 15px; }
+                    .seq-no { font-size: 68px; font-weight: 800; color: #dc2626; margin: 12px 0; border: 2px dashed #b45309; border-radius: 12px; background: white; }
+                    .name { font-size: 18px; font-weight: bold; color: #1e293b; }
+                    .details { font-size: 12px; color: #64748b; margin-top: 5px; }
+                </style>
+            </head>
+            <body>
+                <div class="badge">
+                    <div class="header">Sharadotsav</div>
+                    <div class="sub">Shree Durga Mandir Vikas Samiti, Mirzapur Rosera</div>
+                    <div style="font-size:12px; font-weight:bold;">STAGE CHEST NUMBER [${item.event_category} - Age: ${item.age_category} Yrs]</div>
+                    <div class="seq-no">#${seqIndex}</div>
+                    <div class="name">${item.team_name}</div>
+                    <div class="details">Age Group: ${item.age_category} Yrs | Distance: ${item.distance}km | ${item.participation_type}</div>
+                    <div class="details">Song: ${item.song_name || 'N/A'}</div>
+                </div>
+                <script>window.onload = function() { window.print(); window.close(); }<\/script>
+            </body>
+            </html>
+        `);
+    }
+
+    function exportToExcel() {
+        const records = getStoredData();
+        if (records.length === 0) { alert('No participant data available to export!'); return; }
+
+        let scheduledRecords = generateInterleavedSchedule(records);
+
+        let exportData = scheduledRecords.map((r, idx) => ({
+            StageSeqNo: idx + 1,
+            ID: r.id,
+            Event: r.event_category,
+            Name: r.team_name,
+            Type: r.participation_type,
+            AgeCategory: r.age_category + ' Years',
+            DistanceFromMirzapur_km: r.distance || 0,
+            StyleOrGenre: r.dance_style || '',
+            SongName: r.song_name || '',
+            Mobile: r.mobile_number,
+            Judge1: r.j1 !== '' && r.j1 !== undefined ? r.j1 : '-',
+            Judge2: r.j2 !== '' && r.j2 !== undefined ? r.j2 : '-',
+            Judge3: r.j3 !== '' && r.j3 !== undefined ? r.j3 : '-',
+            Judge4: r.j4 !== '' && r.j4 !== undefined ? r.j4 : '-',
+            AverageScore: r.avgScore || '-'
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Judge_Scores");
+        XLSX.writeFile(workbook, "Sharadotsav_Stage_Report.xlsx");
+    }
+
+    function exportJudgePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape', 'mm', 'a4');
+        const records = getStoredData();
+        if (records.length === 0) { alert('No data to export PDF!'); return; }
+
+        let scheduledRecords = generateInterleavedSchedule(records);
+
+        const ageCategories = [
+            { key: '4-9', label: 'Age Group: 4 - 9 Years (Junior)' },
+            { key: '10-15', label: 'Age Group: 10 - 15 Years (Intermediate)' },
+            { key: '16-20', label: 'Age Group: 16 - 20 Years (Senior)' },
+            { key: '21+', label: 'Age Group: 21+ Above Years (Adult)' }
+        ];
+
+        let hasAddedPage = false;
+
+        ageCategories.forEach(cat => {
+            let catItems = scheduledRecords.filter(r => r.age_category === cat.key);
+            if (catItems.length === 0) return;
+
+            if (hasAddedPage) {
+                doc.addPage();
+            }
+            hasAddedPage = true;
+
+            doc.setFillColor(146, 64, 14);
+            doc.roundedRect(12, 10, 273, 24, 2, 2, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("SHARADOTSAV - OFFICIAL EVALUATION SCORE SHEET", 148.5, 16, { align: 'center' });
+
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(253, 230, 138);
+            doc.text("Organized by: Shree Durga Mandir Vikas Samiti, Mirzapur", 148.5, 22, { align: 'center' });
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(255, 255, 255);
+            doc.text(cat.label, 148.5, 29, { align: 'center' });
+
+            let tableData = [];
+            catItems.forEach((item, index) => {
+                tableData.push([
+                    index + 1,
+                    item.event_category,
+                    item.team_name,
+                    `${item.age_category} Yrs`,
+                    `${item.distance} km`,
+                    item.participation_type,
+                    item.dance_style || '',
+                    item.song_name || '',
+                    item.j1 !== '' && item.j1 !== undefined ? item.j1 : '',
+                    item.j2 !== '' && item.j2 !== undefined ? item.j2 : '',
+                    item.j3 !== '' && item.j3 !== undefined ? item.j3 : '',
+                    item.j4 !== '' && item.j4 !== undefined ? item.j4 : '',
+                    item.avgScore || ''
+                ]);
+            });
+
+            doc.autoTable({
+                startY: 37,
+                head: [
+                    ['Seq #', 'Event', 'Participant / Group Name', 'Age', 'Dist', 'Type', 'Style/Genre', 'Song Name / Track', 'J1', 'J2', 'J3', 'J4', 'Avg']
+                ],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center' },
+                bodyStyles: { fontSize: 7.5, textColor: [30, 41, 59] },
+                columnStyles: {
+                    0: { halign: 'center', fontStyle: 'bold' },
+                    1: { halign: 'center', fontStyle: 'bold' },
+                    3: { halign: 'center', fontStyle: 'bold' },
+                    4: { halign: 'center', fontStyle: 'bold', fillColor: [254, 243, 199] },
+                    5: { halign: 'center' },
+                    8: { halign: 'center' }, 9: { halign: 'center' }, 10: { halign: 'center' }, 11: { halign: 'center' },
+                    12: { halign: 'center', fontStyle: 'bold', fillColor: [254, 243, 199] }
+                },
+                alternateRowStyles: { fillColor: [252, 250, 245] },
+                margin: { left: 12, right: 12 },
+                didDrawPage: function (data) {
+                    let pageCount = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`, 285, 202, { align: 'right' });
+                }
+            });
+        });
+
+        if (!hasAddedPage) {
+            alert('Koi bhi record available nahi hai export karne ke liye!');
+            return;
+        }
+
+        doc.save('Sharadotsav_Evaluation_Sheets_Category_Wise.pdf');
+    }
+
+    function generateAllCertificates() {
+        const { jsPDF } = window.jspdf;
+        const records = getStoredData();
+        if (records.length === 0) { alert('No data available to generate certificates!'); return; }
+
+        const doc = new jsPDF('landscape', 'mm', 'a4');
+
+        const categories = ['4-9', '10-15', '16-20', '21+'];
+        let winnersMap = {};
+
+        ['Dance', 'Singing'].forEach(evt => {
+            categories.forEach(cat => {
+                let catRecords = records.filter(d => d.event_category === evt && d.age_category === cat && d.avgScore && !isNaN(d.avgScore));
+                catRecords.sort((a, b) => parseFloat(b.avgScore) - parseFloat(a.avgScore));
+                if(catRecords[0]) winnersMap[catRecords[0].id] = '1ST PLACE WINNER - GOLD MEDALIST';
+                if(catRecords[1]) winnersMap[catRecords[1].id] = '2ND PLACE WINNER - SILVER MEDALIST';
+                if(catRecords[2]) winnersMap[catRecords[2].id] = '3RD PLACE WINNER - BRONZE MEDALIST';
+            });
+        });
+
+        records.forEach((item, index) => {
+            if (index > 0) doc.addPage();
+
+            let winnerRank = winnersMap[item.id];
+            let certTitle = winnerRank ? "CERTIFICATE OF CULTURAL EXCELLENCE & ACHIEVEMENT" : "CERTIFICATE OF MERITORIOUS CULTURAL PARTICIPATION";
+
+            // Elegant Background Fill
+            doc.setFillColor(255, 252, 242);
+            doc.rect(0, 0, 297, 210, 'F');
+
+            // Outer Decorative Borders
+            doc.setDrawColor(146, 64, 14);
+            doc.setLineWidth(3);
+            doc.rect(10, 10, 277, 190);
+            
+            doc.setDrawColor(220, 38, 38);
+            doc.setLineWidth(1);
+            doc.rect(14, 14, 269, 182);
+
+            doc.setDrawColor(217, 119, 6);
+            doc.setLineWidth(0.5);
+            doc.rect(16, 16, 265, 178);
+
+            // Corner Accents
+            doc.setFillColor(180, 83, 9);
+            doc.rect(10, 10, 6, 6, 'F');
+            doc.rect(281, 10, 6, 6, 'F');
+            doc.rect(10, 194, 6, 6, 'F');
+            doc.rect(281, 194, 6, 6, 'F');
+
+            // Header Event Title (Big & Prominent: SHARADOTSAV)
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(38);
+            doc.setTextColor(120, 53, 15);
+            doc.text("SHARADOTSAV", 148.5, 30, { align: "center" });
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.setTextColor(180, 83, 9);
+            doc.text("Organized by: Shree Durga Mandir Vikas Samiti, Mirzapur", 148.5, 39, { align: "center" });
+
+            // Certificate Title
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(17);
+            doc.setTextColor(winnerRank ? 180 : 30, winnerRank ? 83 : 41, winnerRank ? 9 : 59);
+            doc.text(certTitle, 148.5, 56, { align: "center" });
+
+            if (winnerRank) {
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(10.5);
+                doc.setTextColor(220, 38, 38);
+                doc.text(`★ OFFICIALLY AWARDED ${winnerRank} ★`, 148.5, 63, { align: "center" });
+            }
+
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(10.5);
+            doc.setTextColor(100, 116, 139);
+            doc.text("This prestigious certificate of cultural appreciation and high honor is proudly presented to", 148.5, winnerRank ? 72 : 69, { align: "center" });
+
+            // Participant Name
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(26);
+            doc.setTextColor(30, 41, 59);
+            doc.text(item.team_name, 148.5, winnerRank ? 86 : 82, { align: "center" });
+
+            // Underline Name
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(217, 119, 6);
+            doc.line(75, winnerRank ? 90 : 86, 222, winnerRank ? 90 : 86);
+
+            // Rich & Detailed Content Paragraphs
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10.5);
+            doc.setTextColor(51, 65, 85);
+            doc.text(`For an exceptionally splendid, magnificent, and mesmerizing performance in the official ${item.event_category} Competition`, 148.5, winnerRank ? 101 : 97, { align: "center" });
+            doc.text(`held during the grand annual cultural festival of Sharadotsav. Participating under the ${item.participation_type} Category,`, 148.5, winnerRank ? 109 : 105, { align: "center" });
+            doc.text(`Age Group: ${item.age_category} Years, you demonstrated extraordinary artistic talent, profound rhythm, impeccable grace,`, 148.5, winnerRank ? 117 : 113, { align: "center" });
+            doc.text(`and unwavering dedication to Indian art and cultural heritage, captivating both the judges and the audience alike.`, 148.5, winnerRank ? 125 : 121, { align: "center" });
+
+            if(item.avgScore) {
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(180, 83, 9);
+                doc.text(`Official Expert Evaluation Score Secured: ${item.avgScore} / 100`, 148.5, winnerRank ? 135 : 131, { align: "center" });
+            }
+
+            // Blessings & Cultural Encouragement Quote Box / Text
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(9.5);
+            doc.setTextColor(100, 116, 139);
+            doc.text("“Art and culture are the soul of our society; your vibrant participation preserves our timeless traditions and inspires generations.”", 148.5, winnerRank ? 145 : 141, { align: "center" });
+
+            // Single Chief Guest Signature Box at Bottom Right with Committee Mention
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(148, 163, 184);
+            doc.line(190, 166, 260, 166);
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(71, 85, 105);
+            doc.text("Chief Guest / Honorable Dignitary", 225, 172, { align: "center" });
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.text("Sharadotsav Celebration Committee", 225, 178, { align: "center" });
+
+            // Footer tagline
+            doc.setFontSize(8.5);
+            doc.setFont("helvetica", "italic");
+            doc.setTextColor(148, 163, 184);
+            doc.text("Celebrating Art, Tradition, and Cultural Harmony at Sharadotsav • Mirzapur Rosera", 148.5, 191, { align: "center" });
+        });
+
+        doc.save("Sharadotsav_Cultural_Certificates.pdf");
+    }
+
+    window.onload = function() {
+        renderSchedule();
+    };
+</script>
+</body>
+</html>
